@@ -1,3 +1,5 @@
+import { installSaveCanvasCommand } from './canvas-save'
+
 /**
  * Creates a canvas element with the specified width and height, and returns its rendering context.
  * If a canvas ID is not provided, the default ID 'mainCanvas' is used.
@@ -17,13 +19,12 @@ export function createCanvas(width: number, height: number, canvasId: string = '
     canvas.width = width
     canvas.height = height
 
-    // preserve buffer to CMD+S saving
     const ctx = canvas.getContext('2d')
     if (!ctx) {
         throw new Error('Canvas not supported in this browser!')
     }
 
-    // installSaveCanvasCommand(gl.canvas)
+    installSaveCanvasCommand(ctx.canvas)
 
     return ctx
 }
@@ -55,18 +56,6 @@ export function createOffscreenCanvas(
 
     return offCtx
 }
-
-/*
-
-
-// EVIL MONKEY PATCHING IN SOME METHODS
-if (typeof OffscreenCanvasRenderingContext2D.prototype.background === 'undefined') {
-    OffscreenCanvasRenderingContext2D.prototype.background = function (color) {
-        this.fillStyle = color
-        this.fillRect(0, 0, this.canvas.width, this.canvas.height)
-    }
-}
-*/
 
 /*
 // keep canvas centered and scaled

@@ -1,4 +1,4 @@
-export function installSaveCanvasCommand(canvas) {
+export function installSaveCanvasCommand(canvas: HTMLCanvasElement) {
     document.addEventListener('keydown', function (event) {
         // Check if 'S' is pressed along with the Control key (Ctrl) or Command key (Cmd)
         if (event.key === 's' && (event.ctrlKey || event.metaKey)) {
@@ -8,7 +8,7 @@ export function installSaveCanvasCommand(canvas) {
     })
 }
 
-function saveCanvas(canvas) {
+function saveCanvas(canvas: HTMLCanvasElement) {
     // Create an image from the canvas
     var image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream')
 

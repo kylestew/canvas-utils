@@ -1,10 +1,25 @@
-let gl
-let currentProgram
-import { installSaveCanvasCommand } from './canvas-util.js'
+import { installSaveCanvasCommand } from './canvas-save'
+import { createShader, createShaderProgram } from './shader-program'
 
-export function createGLCanvas(width, height) {
+let gl: WebGLRenderingContext | null
+let currentProgram: WebGLProgram
+/**
+ * Creates a WebGL canvas with the specified width and height.
+ *
+ * @param width - The width of the canvas.
+ * @param height - The height of the canvas.
+ * @param canvasId - The ID of the canvas element (optional, default is 'mainCanvasGL').
+ *
+ * @returns The WebGL rendering context.
+ * @throws Error if WebGL is not supported in the browser.
+ */
+export function createGLCanvas(
+    width: number,
+    height: number,
+    canvasId: string = 'mainCanvasGL'
+): WebGLRenderingContext {
     let canvas = document.createElement('canvas')
-    canvas.id = 'mainCanvas'
+    canvas.id = canvasId
     document.body.appendChild(canvas)
 
     canvas.width = width
@@ -13,27 +28,80 @@ export function createGLCanvas(width, height) {
     // preserve buffer to CMD+S saving
     gl = canvas.getContext('webgl', { preserveDrawingBuffer: true })
     if (!gl) {
-        console.error('WebGL not supported in this browser!')
+        throw new Error('WebGL not supported in this browser!')
     }
 
-    installSaveCanvasCommand(gl.canvas)
+    installSaveCanvasCommand(canvas)
 
     return gl
 }
 
-export function useShader(program) {
-    currentProgram = program
-    gl.useProgram(program)
-}
-
-export function glClear(color) {
+/**
+ * Clears the WebGL context with the specified color.
+ *
+ * @param color - An array of four numbers representing the RGBA color values.
+ */
+export function glClear(color: number[]) {
     const [r, g, b, a] = color
-    gl.clearColor(r, g, b, a) // Clear to black, fully opaque
-    gl.clearDepth(1.0) // Clear everything
-    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+    gl?.clearColor(r, g, b, a) // Clear to black, fully opaque
+    gl?.clearDepth(1.0) // Clear everything
+    gl?.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 
-export function useTexture(textureId, uniformName, data) {
+/**
+ * Loads and compiles a shader program using the provided vertex and fragment shader sources.
+ *
+ * @param vertexShaderSource The source code of the vertex shader.
+ * @param fragmentShaderSource The source code of the fragment shader.
+ *
+ * @returns The compiled shader program, or null if compilation fails.
+ * @throws Error if the WebGL context has not been created yet.
+ */
+export function loadShader(vertexShaderSource: string, fragmentShaderSource: string) {
+    if (!gl) {
+        throw new Error('WebGL context not created yet!')
+    }
+
+    const vertexShader: WebGLShader | null = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
+    if (!vertexShader) {
+        console.error('Failed to create vertex shader')
+        return null
+    }
+
+    const fragmentShader: WebGLShader | null = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
+    if (!fragmentShader) {
+        console.error('Failed to create fragment shader')
+        return null
+    }
+
+    const shaderProgram: WebGLProgram | null = createShaderProgram(gl, vertexShader, fragmentShader)
+    return shaderProgram
+}
+
+/**
+ * Sets the current WebGL program and uses it for rendering.
+ *
+ * @param program The WebGL program to use.
+ */
+export function useShader(program: WebGLProgram) {
+    currentProgram = program
+    gl?.useProgram(program)
+}
+
+/**
+ * Binds a texture to a WebGL context and connects it to a shader uniform.
+ *
+ * @param textureId - The texture unit to bind the texture to.
+ * @param uniformName - The name of the shader uniform to connect the texture to.
+ * @param data - The texture data to bind. Can be an HTMLCanvasElement, OffscreenCanvas, or a WebGLTexture object.
+ *
+ * @throws Error if the WebGL context or current program is not available.
+ */
+export function useTexture(textureId: number, uniformName: string, data: TexImageSource) {
+    if (!gl || !currentProgram) {
+        throw new Error('WebGL context not created yet!')
+    }
+
     gl.activeTexture(textureId)
 
     if (data instanceof HTMLCanvasElement || data instanceof OffscreenCanvas) {
@@ -55,6 +123,7 @@ export function useTexture(textureId, uniformName, data) {
     gl.uniform1i(uniformLocation, textureUnitIndex)
 }
 
+/*
 export function setUniform(name, value) {
     const uniformLocation = gl.getUniformLocation(currentProgram, name)
     if (uniformLocation === null) {
@@ -85,124 +154,74 @@ export function setUniform(name, value) {
         console.error(`Unsupported uniform type for '${name}'`)
     }
 }
+*/
 
-let positionBuffer = undefined
-let texCoordBuffer = undefined
-export function drawScreen() {
-    if (positionBuffer === undefined) {
-        // Create a buffer to put three 2d clip space points in
-        positionBuffer = gl.createBuffer()
+// Declaring variables for buffers
+let positionBuffer: WebGLBuffer | null = null
+let texCoordBuffer: WebGLBuffer | null = null
 
-        // Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
-        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-
-        // fill it with a 2 triangles that cover clip space
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            new Float32Array([
-                -1,
-                -1, // first triangle
-                1,
-                -1,
-                -1,
-                1,
-                -1,
-                1, // second triangle
-                1,
-                -1,
-                1,
-                1,
-            ]),
-            gl.STATIC_DRAW
-        )
-
-        // Texture coordinate buffer setup
-        texCoordBuffer = gl.createBuffer()
-        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
-        gl.bufferData(
-            gl.ARRAY_BUFFER,
-            new Float32Array([
-                0.0,
-                0.0, // corresponding to -1, -1
-                1.0,
-                0.0, // corresponding to  1, -1
-                0.0,
-                1.0, // corresponding to -1,  1
-                0.0,
-                1.0, // second triangle
-                1.0,
-                0.0,
-                1.0,
-                1.0,
-            ]),
-            gl.STATIC_DRAW
-        )
+// Function to draw on the screen
+/**
+ * Draws the screen using WebGL.
+ *
+ * @throws {Error} If WebGL context or current program is not created yet.
+ */
+export function drawScreen(): void {
+    if (!gl || !currentProgram) {
+        throw new Error('WebGL context not created yet!')
     }
 
+    // Initialize buffers if they haven't been created yet
+    if (!positionBuffer) {
+        positionBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
+        const positions = new Float32Array([
+            -1,
+            -1, // First triangle
+            1,
+            -1,
+            -1,
+            1,
+            -1,
+            1, // Second triangle
+            1,
+            -1,
+            1,
+            1,
+        ])
+        gl.bufferData(gl.ARRAY_BUFFER, positions, gl.STATIC_DRAW)
+
+        texCoordBuffer = gl.createBuffer()
+        gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
+        const textureCoords = new Float32Array([
+            0.0,
+            0.0, // Corresponds to -1, -1
+            1.0,
+            0.0, // Corresponds to  1, -1
+            0.0,
+            1.0, // Corresponds to -1,  1
+            0.0,
+            1.0, // Second triangle
+            1.0,
+            0.0,
+            1.0,
+            1.0,
+        ])
+        gl.bufferData(gl.ARRAY_BUFFER, textureCoords, gl.STATIC_DRAW)
+    }
+
+    // Setup for position attribute
     const positionAttributeLocation = gl.getAttribLocation(currentProgram, 'aPosition')
     gl.enableVertexAttribArray(positionAttributeLocation)
     gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer)
-    gl.vertexAttribPointer(
-        positionAttributeLocation,
-        2, // 2 components per iteration
-        gl.FLOAT, // the data is 32bit floats
-        false, // don't normalize the data
-        0, // 0 = move forward size * sizeof(type) each iteration to get the next position
-        0 // start at the beginning of the buffer
-    )
+    gl.vertexAttribPointer(positionAttributeLocation, 2, gl.FLOAT, false, 0, 0)
 
-    // Enable and bind the texture coordinate buffer
+    // Setup for texture coordinate attribute
     const texCoordAttributeLocation = gl.getAttribLocation(currentProgram, 'aTexCoord')
     gl.enableVertexAttribArray(texCoordAttributeLocation)
     gl.bindBuffer(gl.ARRAY_BUFFER, texCoordBuffer)
     gl.vertexAttribPointer(texCoordAttributeLocation, 2, gl.FLOAT, false, 0, 0)
 
-    gl.drawArrays(
-        gl.TRIANGLES,
-        0, // offset
-        6 // num vertices to process
-    )
-}
-
-export async function loadShader(vsSourcePath, fsSourcePath) {
-    const vertexShaderSource = await loadShaderFile(vsSourcePath)
-    const fragmentShaderSource = await loadShaderFile(fsSourcePath)
-
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource)
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource)
-
-    const shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader)
-    return shaderProgram
-}
-
-async function loadShaderFile(url) {
-    const response = await fetch(url)
-    if (!response.ok) {
-        throw new Error(`Failed to load shader file: ${url}`)
-    }
-    return await response.text()
-}
-
-function createShader(gl, type, source) {
-    const shader = gl.createShader(type)
-    gl.shaderSource(shader, source)
-    gl.compileShader(shader)
-    if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-        console.error('An error occurred compiling the shaders: ' + gl.getShaderInfoLog(shader))
-        gl.deleteShader(shader)
-        return null
-    }
-    return shader
-}
-
-function createShaderProgram(gl, vertexShader, fragmentShader) {
-    const shaderProgram = gl.createProgram()
-    gl.attachShader(shaderProgram, vertexShader)
-    gl.attachShader(shaderProgram, fragmentShader)
-    gl.linkProgram(shaderProgram)
-    if (!gl.getProgramParameter(shaderProgram, gl.LINK_STATUS)) {
-        console.error('Unable to initialize the shader program: ' + gl.getProgramInfoLog(shaderProgram))
-        return null
-    }
-    return shaderProgram
+    // Draw the triangles
+    gl.drawArrays(gl.TRIANGLES, 0, 6)
 }
