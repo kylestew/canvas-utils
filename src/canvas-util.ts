@@ -57,6 +57,43 @@ export function createOffscreenCanvas(
     return offCtx
 }
 
+/**
+ * Sets the canvas range for a given CanvasRenderingContext2D.
+ * This function scales and translates the canvas to fit the range [min, max] into the canvas dimensions.
+ *
+ * @param ctx - The CanvasRenderingContext2D to set the range for.
+ * @param min - The minimum value of the range.
+ * @param max - The maximum value of the range.
+ */
+export function setCanvasRange(ctx: CanvasRenderingContext2D, min: number, max: number): void {
+    // Retrieve the canvas dimensions from the context
+    const width = ctx.canvas.width
+    const height = ctx.canvas.height
+
+    // Determine the shortest side
+    const size = Math.min(width, height)
+
+    // Calculate the scale factor to fit [min, max] into the shortest side
+    const scaleFactor = size / (max - min)
+
+    // Reset transformations to default
+    ctx.resetTransform()
+
+    // Set up scaling
+    ctx.scale(scaleFactor, scaleFactor)
+
+    // Determine if width or height is the shortest dimension and calculate translation
+    if (size === width) {
+        // Width is the shortest, center vertically
+        const excessHeight = height / scaleFactor - (max - min)
+        ctx.translate(-min, -min + excessHeight / 2)
+    } else {
+        // Height is the shortest, center horizontally
+        const excessWidth = width / scaleFactor - (max - min)
+        ctx.translate(-min + excessWidth / 2, -min)
+    }
+}
+
 /*
 // keep canvas centered and scaled
 // TODO: finish this
