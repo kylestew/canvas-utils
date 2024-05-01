@@ -69,7 +69,7 @@ export function setCanvasRange(
     ctx: CanvasRenderingContext2D,
     min: number,
     max: number
-): { xRange: [number, number]; yRange: [number, number] } {
+): { min: [number, number]; max: [number, number] } {
     // Retrieve the canvas dimensions from the context
     const width = ctx.canvas.width
     const height = ctx.canvas.height
@@ -120,7 +120,7 @@ export function setCanvasRange(
 
     // Return new ranges describing how the canvas area is being used
     return {
-        xRange: xRange,
-        yRange: yRange,
+        min: [xRange[0], yRange[0]],
+        max: [xRange[1], yRange[1]],
     }
 }
