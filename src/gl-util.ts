@@ -13,11 +13,7 @@ let currentProgram: WebGLProgram
  * @returns The WebGL rendering context.
  * @throws Error if WebGL is not supported in the browser.
  */
-export function createGLCanvas(
-    width: number,
-    height: number,
-    canvasId: string = 'mainCanvasGL'
-): WebGLRenderingContext {
+export function createGLCanvas(width: number, height: number, canvasId: string = 'mainCanvas'): WebGLRenderingContext {
     let canvas = document.createElement('canvas')
     canvas.id = canvasId
     document.body.appendChild(canvas)
