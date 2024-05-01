@@ -65,7 +65,11 @@ export function createOffscreenCanvas(
  * @param min - The minimum value of the range.
  * @param max - The maximum value of the range.
  */
-export function setCanvasRange(ctx: CanvasRenderingContext2D, min: number, max: number): void {
+export function setCanvasRange(
+    ctx: CanvasRenderingContext2D,
+    min: number,
+    max: number
+): { xRange: [number, number]; yRange: [number, number] } {
     // Retrieve the canvas dimensions from the context
     const width = ctx.canvas.width
     const height = ctx.canvas.height
@@ -75,6 +79,7 @@ export function setCanvasRange(ctx: CanvasRenderingContext2D, min: number, max: 
 
     // Calculate the scale factor to fit [min, max] into the shortest side
     const scaleFactor = size / (max - min)
+    console.log('SCALE FACTOR', scaleFactor)
 
     // Reset transformations to default
     ctx.resetTransform()
@@ -82,39 +87,40 @@ export function setCanvasRange(ctx: CanvasRenderingContext2D, min: number, max: 
     // Set up scaling
     ctx.scale(scaleFactor, scaleFactor)
 
+    // Initialize translation values
+    let translateX = 0
+    let translateY = 0
+
+    let excessWidth = 0
+    let excessHeight = 0
+
+    let xRange: [number, number] = [min, max]
+    let yRange: [number, number] = [min, max]
+
     // Determine if width or height is the shortest dimension and calculate translation
     if (size === width) {
         // Width is the shortest, center vertically
-        const excessHeight = height / scaleFactor - (max - min)
-        ctx.translate(-min, -min + excessHeight / 2)
+        excessHeight = height - width
+        translateY = excessHeight / (2 * scaleFactor)
+        ctx.translate(-min, -min + translateY)
+
+        // Update yRange to reflect the actual range being displayed
+        const rescaleFactor = height / (max - min) / scaleFactor
+        yRange = [min * rescaleFactor, max * rescaleFactor]
     } else {
         // Height is the shortest, center horizontally
-        const excessWidth = width / scaleFactor - (max - min)
-        ctx.translate(-min + excessWidth / 2, -min)
+        excessWidth = width - height
+        translateX = excessWidth / (2 * scaleFactor)
+        ctx.translate(-min + translateX, -min)
+
+        // Update yRange to reflect the actual range being displayed
+        const rescaleFactor = width / (max - min) / scaleFactor
+        xRange = [min * rescaleFactor, max * rescaleFactor]
+    }
+
+    // Return new ranges describing how the canvas area is being used
+    return {
+        xRange: xRange,
+        yRange: yRange,
     }
 }
-
-/*
-// keep canvas centered and scaled
-// TODO: finish this
-function adjustCanvasSize() {
-    const canvas = document.querySelector('#app canvas') as HTMLCanvasElement
-    if (!canvas) return
-
-    // // Calculate height as 80% of viewport height
-    // const height = window.innerHeight * 0.8
-
-    // // Calculate width based on the aspect ratio
-    // const width = height * aspectRatio
-
-    // // Set canvas width and height
-    // canvas.style.height = `${height}px`
-    // canvas.style.width = `${width}px`
-}
-
-// Adjust canvas size on load and window resize
-window.addEventListener('load', adjustCanvasSize)
-window.addEventListener('resize', adjustCanvasSize)
-
-// TODO: CMD+S to save output on sketch
-*/
