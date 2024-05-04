@@ -1,5 +1,8 @@
-import { installSaveCanvasCommand } from './canvas-save';
-import { createShader, createShaderProgram } from './shader-program';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.drawScreen = exports.useTexture = exports.useShader = exports.loadShader = exports.glClear = exports.createGLCanvas = void 0;
+const canvas_save_1 = require("./canvas-save");
+const shader_program_1 = require("./shader-program");
 let gl;
 let currentProgram;
 /**
@@ -12,7 +15,7 @@ let currentProgram;
  * @returns The WebGL rendering context.
  * @throws Error if WebGL is not supported in the browser.
  */
-export function createGLCanvas(width, height, canvasId = 'mainCanvas') {
+function createGLCanvas(width, height, canvasId = 'mainCanvas') {
     let canvas = document.createElement('canvas');
     canvas.id = canvasId;
     document.body.appendChild(canvas);
@@ -23,20 +26,22 @@ export function createGLCanvas(width, height, canvasId = 'mainCanvas') {
     if (!gl) {
         throw new Error('WebGL not supported in this browser!');
     }
-    installSaveCanvasCommand(canvas);
+    (0, canvas_save_1.installSaveCanvasCommand)(canvas);
     return gl;
 }
+exports.createGLCanvas = createGLCanvas;
 /**
  * Clears the WebGL context with the specified color.
  *
  * @param color - An array of four numbers representing the RGBA color values.
  */
-export function glClear(color) {
+function glClear(color) {
     const [r, g, b, a] = color;
     gl === null || gl === void 0 ? void 0 : gl.clearColor(r, g, b, a); // Clear to black, fully opaque
     gl === null || gl === void 0 ? void 0 : gl.clearDepth(1.0); // Clear everything
     gl === null || gl === void 0 ? void 0 : gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 }
+exports.glClear = glClear;
 /**
  * Loads and compiles a shader program using the provided vertex and fragment shader sources.
  *
@@ -46,32 +51,34 @@ export function glClear(color) {
  * @returns The compiled shader program, or null if compilation fails.
  * @throws Error if the WebGL context has not been created yet.
  */
-export function loadShader(vertexShaderSource, fragmentShaderSource) {
+function loadShader(vertexShaderSource, fragmentShaderSource) {
     if (!gl) {
         throw new Error('WebGL context not created yet!');
     }
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
+    const vertexShader = (0, shader_program_1.createShader)(gl, gl.VERTEX_SHADER, vertexShaderSource);
     if (!vertexShader) {
         console.error('Failed to create vertex shader');
         return null;
     }
-    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
+    const fragmentShader = (0, shader_program_1.createShader)(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
     if (!fragmentShader) {
         console.error('Failed to create fragment shader');
         return null;
     }
-    const shaderProgram = createShaderProgram(gl, vertexShader, fragmentShader);
+    const shaderProgram = (0, shader_program_1.createShaderProgram)(gl, vertexShader, fragmentShader);
     return shaderProgram;
 }
+exports.loadShader = loadShader;
 /**
  * Sets the current WebGL program and uses it for rendering.
  *
  * @param program The WebGL program to use.
  */
-export function useShader(program) {
+function useShader(program) {
     currentProgram = program;
     gl === null || gl === void 0 ? void 0 : gl.useProgram(program);
 }
+exports.useShader = useShader;
 /**
  * Binds a texture to a WebGL context and connects it to a shader uniform.
  *
@@ -81,7 +88,7 @@ export function useShader(program) {
  *
  * @throws Error if the WebGL context or current program is not available.
  */
-export function useTexture(textureId, uniformName, data) {
+function useTexture(textureId, uniformName, data) {
     if (!gl || !currentProgram) {
         throw new Error('WebGL context not created yet!');
     }
@@ -103,6 +110,7 @@ export function useTexture(textureId, uniformName, data) {
     const textureUnitIndex = textureId - gl.TEXTURE0;
     gl.uniform1i(uniformLocation, textureUnitIndex);
 }
+exports.useTexture = useTexture;
 /*
 export function setUniform(name, value) {
     const uniformLocation = gl.getUniformLocation(currentProgram, name)
@@ -144,7 +152,7 @@ let texCoordBuffer = null;
  *
  * @throws {Error} If WebGL context or current program is not created yet.
  */
-export function drawScreen() {
+function drawScreen() {
     if (!gl || !currentProgram) {
         throw new Error('WebGL context not created yet!');
     }
@@ -198,3 +206,4 @@ export function drawScreen() {
     // Draw the triangles
     gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
+exports.drawScreen = drawScreen;

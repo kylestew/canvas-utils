@@ -1,4 +1,7 @@
-import { installSaveCanvasCommand } from './canvas-save';
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.setCanvasRange = exports.createOffscreenCanvas = exports.createCanvas = void 0;
+const canvas_save_1 = require("./canvas-save");
 /**
  * Creates a canvas element with the specified width and height, and returns its rendering context.
  * If a canvas ID is not provided, the default ID 'mainCanvas' is used.
@@ -10,7 +13,7 @@ import { installSaveCanvasCommand } from './canvas-save';
  * @returns The rendering context of the created canvas.
  * @throws {Error} If canvas is not supported in the browser.
  */
-export function createCanvas(width, height, canvasId = 'mainCanvas') {
+function createCanvas(width, height, canvasId = 'mainCanvas') {
     const canvas = document.createElement('canvas');
     canvas.id = canvasId;
     document.body.appendChild(canvas);
@@ -20,9 +23,10 @@ export function createCanvas(width, height, canvasId = 'mainCanvas') {
     if (!ctx) {
         throw new Error('Canvas not supported in this browser!');
     }
-    installSaveCanvasCommand(ctx.canvas);
+    (0, canvas_save_1.installSaveCanvasCommand)(ctx.canvas);
     return ctx;
 }
+exports.createCanvas = createCanvas;
 /**
  * Creates an offscreen canvas with the specified width and height.
  *
@@ -33,7 +37,7 @@ export function createCanvas(width, height, canvasId = 'mainCanvas') {
  * @returns The OffscreenCanvasRenderingContext2D object representing the offscreen canvas.
  * @throws Error if the OffscreenCanvasRenderingContext2D cannot be created.
  */
-export function createOffscreenCanvas(width, height, clearColor = 'black') {
+function createOffscreenCanvas(width, height, clearColor = 'black') {
     const offscreenCanvas = new OffscreenCanvas(width, height);
     const offCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
     if (!offCtx) {
@@ -43,6 +47,7 @@ export function createOffscreenCanvas(width, height, clearColor = 'black') {
     offCtx.fillRect(0, 0, width, height);
     return offCtx;
 }
+exports.createOffscreenCanvas = createOffscreenCanvas;
 /**
  * Sets the canvas range for a given CanvasRenderingContext2D.
  * This function scales and translates the canvas to fit the range [min, max] into the canvas dimensions.
@@ -51,7 +56,7 @@ export function createOffscreenCanvas(width, height, clearColor = 'black') {
  * @param min - The minimum value of the range.
  * @param max - The maximum value of the range.
  */
-export function setCanvasRange(ctx, min, max) {
+function setCanvasRange(ctx, min, max) {
     // Retrieve the canvas dimensions from the context
     const width = ctx.canvas.width;
     const height = ctx.canvas.height;
@@ -96,3 +101,4 @@ export function setCanvasRange(ctx, min, max) {
         max: [xRange[1], yRange[1]],
     };
 }
+exports.setCanvasRange = setCanvasRange;

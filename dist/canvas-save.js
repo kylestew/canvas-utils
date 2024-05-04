@@ -1,4 +1,7 @@
-export function installSaveCanvasCommand(canvas) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.installSaveCanvasCommand = void 0;
+function installSaveCanvasCommand(canvas) {
     document.addEventListener('keydown', function (event) {
         // Check if 'S' is pressed along with the Control key (Ctrl) or Command key (Cmd)
         if (event.key === 's' && (event.ctrlKey || event.metaKey)) {
@@ -7,6 +10,7 @@ export function installSaveCanvasCommand(canvas) {
         }
     });
 }
+exports.installSaveCanvasCommand = installSaveCanvasCommand;
 function saveCanvas(canvas) {
     // Create an image from the canvas
     var image = canvas.toDataURL('image/png').replace('image/png', 'image/octet-stream');

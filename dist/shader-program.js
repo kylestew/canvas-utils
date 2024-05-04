@@ -1,4 +1,7 @@
-export function createShader(gl, type, source) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.createShaderProgram = exports.createShader = void 0;
+function createShader(gl, type, source) {
     const shader = gl.createShader(type);
     if (!shader) {
         console.error('Failed to create shader');
@@ -13,7 +16,8 @@ export function createShader(gl, type, source) {
     }
     return shader;
 }
-export function createShaderProgram(gl, vertexShader, fragmentShader) {
+exports.createShader = createShader;
+function createShaderProgram(gl, vertexShader, fragmentShader) {
     const shaderProgram = gl.createProgram();
     if (!shaderProgram) {
         console.error('Failed to create shader program');
@@ -28,3 +32,4 @@ export function createShaderProgram(gl, vertexShader, fragmentShader) {
     }
     return shaderProgram;
 }
+exports.createShaderProgram = createShaderProgram;
